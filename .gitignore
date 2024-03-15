@@ -1,0 +1,21 @@
+.envrc
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin
+hack/tools/bin
+testbin/*
+temp
+# Test binary, build with `go test -c`
+*.test
+.coverage
+.cache
+.reports
+# build and release
+dist
+csctl-plugin-openstack
+tmp/
+releases/

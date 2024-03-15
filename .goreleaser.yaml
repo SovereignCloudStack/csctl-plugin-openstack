@@ -1,0 +1,16 @@
+project_name: csctl-plugin-openstack
+
+builds:
+  - binary: csctl-plugin-openstack
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X 'github.com/SovereignCloudStack/csctl-plugin-openstack/pkg/cmd.Version={{.Version}}'
+      - -X 'github.com/SovereignCloudStack/csctl-plugin-openstack/pkg/cmd.Commit={{.Commit}}'
