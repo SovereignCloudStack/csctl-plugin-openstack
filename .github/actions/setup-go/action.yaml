@@ -1,0 +1,30 @@
+name: "Setup Go"
+description: "Setup Go"
+runs:
+  using: "composite"
+  steps:
+    - name: Install go
+      uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      with:
+        go-version-file: "go.mod"
+        cache: true
+        cache-dependency-path: go.sum
+    - id: go-cache-paths
+      shell: bash
+      run: |
+        echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+        echo "go-mod=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+    - name: Go Mod Cache
+      uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-mod-
+    - name: Go Build Cache
+      uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-build-
