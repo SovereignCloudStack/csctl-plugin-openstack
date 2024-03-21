@@ -45,6 +45,7 @@ type RegistryConfig struct {
 // OpenStackNodeImage represents the structure of the OpenStackNodeImages.
 type OpenStackNodeImage struct {
 	URL        string `yaml:"url"`
+	ImageDir   string `yaml:"imageDir,omitempty"`
 	CreateOpts struct {
 		Name            string `yaml:"name"`
 		DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` YAML tag
@@ -72,7 +73,9 @@ https://github.com/SovereignCloudStack/csctl
 }
 
 func main() {
-	if len(os.Args) != 4 {
+	numArgs := 5
+	if len(os.Args) != numArgs {
+		fmt.Printf("Wrong number of arguments. Expected %d got %d\n", numArgs, len(os.Args))
 		usage()
 		os.Exit(1)
 	}
@@ -81,13 +84,18 @@ func main() {
 		os.Exit(1)
 	}
 	clusterStackPath := os.Args[2]
-	configFilePath := filepath.Join(clusterStackPath, "node-images", "config.yaml")
-	config, err := csctlclusterstack.GetCsctlConfig(clusterStackPath)
+	csctlConfig, err := csctlclusterstack.GetCsctlConfig(clusterStackPath)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	if config.Config.Provider.Type != provider {
+	configFilePath := filepath.Join(clusterStackPath, "node-images")
+	config, err := GetConfig(configFilePath)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	if csctlConfig.Config.Provider.Type != provider {
 		fmt.Printf("Wrong provider in %s. Expected %s\n", clusterStackPath, provider)
 		os.Exit(1)
 	}
@@ -97,8 +105,8 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	method := config.Config.Provider.Config.Method
-	switch strings.ToLower(method) {
+	method := csctlConfig.Config.Provider.Config["method"]
+	switch method {
 	case "get":
 		// Copy config.yaml to releaseDir as node-images.yaml
 		dest := filepath.Join(releaseDir, "node-images.yaml")
@@ -108,66 +116,67 @@ func main() {
 		}
 		fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
 	case "build":
-		if len(config.Config.Provider.Config.Images) > 0 {
-			for _, image := range config.Config.Provider.Config.Images {
-				// Construct the path to the image folder
-				packerImagePath := filepath.Join(clusterStackPath, "node-images", *image)
-
-				if _, err := os.Stat(packerImagePath); err == nil {
-					fmt.Println("Running packer build...")
-					// Warning: variables like build_name and output_directory must exist in packer ariables file like in example
-					// #nosec G204
-					cmd := exec.Command("packer", "build", "-var", "build_name="+*image, "-var", "output_directory="+outputDirectory, packerImagePath)
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					if err := cmd.Run(); err != nil {
-						fmt.Printf("Error running packer build: %v\n", err)
-						os.Exit(1)
-					}
-					fmt.Println("Packer build completed successfully.")
-
-					// Todo: Use --node-image-registry flag to pass path to registry.yaml
-					registryConfigPath := filepath.Join(clusterStackPath, "node-images", "registry.yaml")
-
-					// Get the current working directory
-					currentDir, err := os.Getwd()
-					if err != nil {
-						fmt.Printf("Error getting current working directory: %v\n", err)
-						os.Exit(1)
-					}
-
-					// Path to the image created by the packer
-					// Warning: name of the image created by packer should have same name as the name of the image folder in node-images
-					ouputImagePath := filepath.Join(currentDir, outputDirectory, *image)
-
-					// Push the built image to S3
-					if err := pushToS3(ouputImagePath, *image, registryConfigPath); err != nil {
-						fmt.Printf("Error pushing image to S3: %v\n", err)
-						os.Exit(1)
-					}
-
-					// TODO: Add check if config.yaml openStackNodeImages have same length as images list in csctl.yaml
-					// Update URL in config.yaml if it is necessary
-					if err := updateURLNodeImages(configFilePath, registryConfigPath, *image); err != nil {
-						fmt.Printf("Error updating URL in config.yaml: %v\n", err)
-						os.Exit(1)
-					}
-					// Copy config.yaml to releaseDir as node-images.yaml
-					dest := filepath.Join(releaseDir, "node-images.yaml")
-					if err := copyFile(configFilePath, dest); err != nil {
-						fmt.Printf("Error copying config.yaml to releaseDir: %v\n", err)
-						os.Exit(1)
-					}
-					fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
-				} else {
-					fmt.Printf("Image folder %s does not exist\n", packerImagePath)
-				}
+		for _, image := range config.OpenStackNodeImages {
+			if image.ImageDir == "" {
+				fmt.Printf("No images to build, image directory is not defined in config.yaml file")
+				os.Exit(1)
 			}
-		} else {
-			fmt.Println("No images to build")
+
+			// Construct the path to the image folder
+			packerImagePath := filepath.Join(clusterStackPath, "node-images", image.ImageDir)
+
+			if _, err := os.Stat(packerImagePath); err != nil {
+				fmt.Printf("Image folder %s does not exist\n", packerImagePath)
+				os.Exit(1)
+			}
+			fmt.Println("Running packer build...")
+			// Warning: variables like build_name and output_directory must exist in packer ariables file like in example
+			// #nosec G204
+			cmd := exec.Command("packer", "build", "-var", "build_name="+image.ImageDir, "-var", "output_directory="+outputDirectory, packerImagePath)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Printf("Error running packer build: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Packer build completed successfully.")
+
+			// Todo: Use --node-image-registry flag to pass path to registry.yaml
+			registryConfigPath := filepath.Join(clusterStackPath, "node-images", "registry.yaml")
+
+			// Get the current working directory
+			currentDir, err := os.Getwd()
+			if err != nil {
+				fmt.Printf("Error getting current working directory: %v\n", err)
+				os.Exit(1)
+			}
+
+			// Path to the image created by the packer
+			// Warning: name of the image created by packer should have same name as the name of the image folder in node-images
+			ouputImagePath := filepath.Join(currentDir, outputDirectory, image.ImageDir)
+
+			// Push the built image to S3
+			if err := pushToS3(ouputImagePath, image.ImageDir, registryConfigPath); err != nil {
+				fmt.Printf("Error pushing image to S3: %v\n", err)
+				os.Exit(1)
+			}
+
+			// Update URL in config.yaml if it is necessary
+			if err := updateURLNodeImages(configFilePath, registryConfigPath, image.ImageDir); err != nil {
+				fmt.Printf("Error updating URL in config.yaml: %v\n", err)
+				os.Exit(1)
+			}
+			// Copy config.yaml to releaseDir as node-images.yaml
+			dest := filepath.Join(releaseDir, "node-images.yaml")
+			if err := copyFile(configFilePath, dest); err != nil {
+				fmt.Printf("Error copying config.yaml to releaseDir: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
 		}
 	default:
 		fmt.Println("Unknown method:", method)
+		os.Exit(1)
 	}
 }
 
@@ -185,6 +194,10 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 	if err := decoder.Decode(&registryConfig); err != nil {
 		return fmt.Errorf("error decoding registry config file: %w", err)
 	}
+
+	// Remove "http://" or "https://" from the endpoint if present cause Endpoint cannot have fully qualified paths in minioClient.
+	registryConfig.Config.Endpoint = strings.TrimPrefix(registryConfig.Config.Endpoint, "http://")
+	registryConfig.Config.Endpoint = strings.TrimPrefix(registryConfig.Config.Endpoint, "https://")
 
 	// Initialize Minio client
 	minioClient, err := minio.New(registryConfig.Config.Endpoint, &minio.Options{
@@ -291,4 +304,49 @@ func copyFile(src, dest string) error {
 	}
 
 	return nil
+}
+
+// GetConfig returns CsctlConfig.
+func GetConfig(path string) (NodeImages, error) {
+	configPath := filepath.Join(path, "config.yaml")
+	configFileData, err := os.ReadFile(filepath.Clean(configPath))
+	if err != nil {
+		return NodeImages{}, fmt.Errorf("failed to read csctl config: %w", err)
+	}
+
+	nd := NodeImages{}
+	if err := yaml.Unmarshal(configFileData, &nd); err != nil {
+		return NodeImages{}, fmt.Errorf("failed to unmarshal config yaml: %w", err)
+	}
+
+	if nd.APIVersion == "" {
+		return NodeImages{}, fmt.Errorf("api version must not be empty")
+	}
+
+	if len(nd.OpenStackNodeImages) == 0 {
+		return NodeImages{}, fmt.Errorf("at least one node image needs to exist in OpenStackNodeImages list")
+	}
+
+	// Ensure all fields in OpenStackNodeImages are defined
+	for _, image := range nd.OpenStackNodeImages {
+		switch {
+		case image.CreateOpts == (struct {
+			Name            string `yaml:"name"`
+			DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` YAML tag
+			ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` YAML tag
+			Visibility      string `yaml:"visibility"`
+		}{}):
+			return NodeImages{}, fmt.Errorf("field CreateOpts must not be empty")
+		case image.CreateOpts.Name == "":
+			return NodeImages{}, fmt.Errorf("field 'name' in CreateOpts must be defined")
+		case image.CreateOpts.DiskFormat == "":
+			return NodeImages{}, fmt.Errorf("field 'disk_format' in CreateOpts must be defined")
+		case image.CreateOpts.ContainerFormat == "":
+			return NodeImages{}, fmt.Errorf("field 'container_format' in CreateOpts must be defined")
+		case image.CreateOpts.Visibility == "":
+			return NodeImages{}, fmt.Errorf("field 'visibility' in CreateOpts must be defined")
+		}
+	}
+
+	return nd, nil
 }
