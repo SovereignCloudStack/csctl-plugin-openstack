@@ -66,16 +66,17 @@ const (
 )
 
 func usage() {
-	fmt.Printf(`%s create-node-images cluster-stack-directory cluster-stack-release-directory
+	fmt.Printf(`%s create-node-images cluster-stack-directory cluster-stack-release-directory [node-image-registry-path]
 This command is a csctl plugin.
 https://github.com/SovereignCloudStack/csctl
 `, os.Args[0])
 }
 
 func main() {
-	numArgs := 5
-	if len(os.Args) != numArgs {
-		fmt.Printf("Wrong number of arguments. Expected %d got %d\n", numArgs, len(os.Args))
+	minArgs := 4
+	maxArgs := 5
+	if len(os.Args) < minArgs || len(os.Args) > maxArgs {
+		fmt.Printf("Wrong number of arguments. Expected %d or %d, got %d\n", minArgs, maxArgs, len(os.Args))
 		usage()
 		os.Exit(1)
 	}
@@ -89,7 +90,7 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	configFilePath := filepath.Join(clusterStackPath, "node-images")
+	configFilePath := filepath.Join(clusterStackPath, "node-images", "config.yaml")
 	config, err := GetConfig(configFilePath)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -105,6 +106,8 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	registryConfigPath := os.Args[4]
+
 	method := csctlConfig.Config.Provider.Config["method"]
 	switch method {
 	case "get":
@@ -142,8 +145,11 @@ func main() {
 			fmt.Println("Packer build completed successfully.")
 
 			// Todo: Use --node-image-registry flag to pass path to registry.yaml
-			registryConfigPath := filepath.Join(clusterStackPath, "node-images", "registry.yaml")
-
+			_, err = os.Stat(registryConfigPath)
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(1)
+			}
 			// Get the current working directory
 			currentDir, err := os.Getwd()
 			if err != nil {
@@ -306,12 +312,11 @@ func copyFile(src, dest string) error {
 	return nil
 }
 
-// GetConfig returns CsctlConfig.
-func GetConfig(path string) (NodeImages, error) {
-	configPath := filepath.Join(path, "config.yaml")
+// GetConfig returns Config.
+func GetConfig(configPath string) (NodeImages, error) {
 	configFileData, err := os.ReadFile(filepath.Clean(configPath))
 	if err != nil {
-		return NodeImages{}, fmt.Errorf("failed to read csctl config: %w", err)
+		return NodeImages{}, fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	nd := NodeImages{}
