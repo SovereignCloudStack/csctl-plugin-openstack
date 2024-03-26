@@ -48,8 +48,8 @@ type OpenStackNodeImage struct {
 	ImageDir   string `yaml:"imageDir,omitempty"`
 	CreateOpts struct {
 		Name            string `yaml:"name"`
-		DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` YAML tag
-		ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` YAML tag
+		DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
+		ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
 		Visibility      string `yaml:"visibility"`
 	} `yaml:"createOpts"`
 }
@@ -337,8 +337,8 @@ func GetConfig(configPath string) (NodeImages, error) {
 		switch {
 		case image.CreateOpts == (struct {
 			Name            string `yaml:"name"`
-			DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` YAML tag
-			ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` YAML tag
+			DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
+			ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
 			Visibility      string `yaml:"visibility"`
 		}{}):
 			return NodeImages{}, fmt.Errorf("field CreateOpts must not be empty")
