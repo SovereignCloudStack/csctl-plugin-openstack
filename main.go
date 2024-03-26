@@ -172,14 +172,14 @@ func main() {
 				fmt.Printf("Error updating URL in config.yaml: %v\n", err)
 				os.Exit(1)
 			}
-			// Copy config.yaml to releaseDir as node-images.yaml
-			dest := filepath.Join(releaseDir, "node-images.yaml")
-			if err := copyFile(configFilePath, dest); err != nil {
-				fmt.Printf("Error copying config.yaml to releaseDir: %v\n", err)
-				os.Exit(1)
-			}
-			fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
 		}
+		// Copy config.yaml to releaseDir as node-images.yaml
+		dest := filepath.Join(releaseDir, "node-images.yaml")
+		if err := copyFile(configFilePath, dest); err != nil {
+			fmt.Printf("Error copying config.yaml to releaseDir: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
 	default:
 		fmt.Println("Unknown method:", method)
 		os.Exit(1)
