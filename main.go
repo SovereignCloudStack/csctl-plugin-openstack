@@ -127,7 +127,7 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Println("Running packer build...")
-			// Warning: variables like build_name and output_directory must exist in packer ariables file like in example
+			// Warning: variables like build_name and output_directory must exist in packer variables file like in example
 			// #nosec G204
 			cmd := exec.Command("packer", "build", "-var", "build_name="+image.ImageDir, "-var", "output_directory="+outputDirectory, packerImagePath)
 			cmd.Stdout = os.Stdout
