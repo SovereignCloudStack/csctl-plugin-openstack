@@ -11,10 +11,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package main provides a dummy plugin for csctl. You can use that code
-// to create a real csctl plugin.
-// You can implement the "create-node-images" command to create node images during
-// a `csclt create` call.
+// Package main provides the OpenStack plugin for csctl.
+// The "create-node-images" command to create node images during
+// a `csctl create` call.
 package main
 
 import (
@@ -28,6 +27,7 @@ import (
 	csctlclusterstack "github.com/SovereignCloudStack/csctl/pkg/clusterstack"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	cspo "github.com/sovereignCloudStack/cluster-stack-provider-openstack/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 )
 
@@ -42,22 +42,16 @@ type RegistryConfig struct {
 	} `yaml:"config"`
 }
 
-// OpenStackNodeImage represents the structure of the OpenStackNodeImages.
-type OpenStackNodeImage struct {
-	URL        string `yaml:"url"`
-	ImageDir   string `yaml:"imageDir,omitempty"`
-	CreateOpts struct {
-		Name            string `yaml:"name"`
-		DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-		ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-		Visibility      string `yaml:"visibility"`
-	} `yaml:"createOpts"`
+// OpenStackNodeImages represents the structure of the OpenStackNodeImages.
+type OpenStackNodeImages struct {
+	cspo.OpenStackNodeImage
+	ImageDir string `yaml:"imageDir,omitempty"`
 }
 
 // NodeImages represents the structure of the config.yaml file.
 type NodeImages struct {
-	APIVersion          string               `yaml:"apiVersion"`
-	OpenStackNodeImages []OpenStackNodeImage `yaml:"openStackNodeImages"`
+	APIVersion          string                `yaml:"apiVersion"`
+	OpenStackNodeImages []OpenStackNodeImages `yaml:"openStackNodeImages"`
 }
 
 const (
@@ -144,7 +138,6 @@ func main() {
 			}
 			fmt.Println("Packer build completed successfully.")
 
-			// Todo: Use --node-image-registry flag to pass path to registry.yaml
 			_, err = os.Stat(registryConfigPath)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -199,6 +192,10 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 	decoder := yaml.NewDecoder(registryConfigFile)
 	if err := decoder.Decode(&registryConfig); err != nil {
 		return fmt.Errorf("error decoding registry config file: %w", err)
+	}
+
+	if registryConfig.Type != "S3" {
+		return fmt.Errorf("error, only S3 compatible registry is supported")
 	}
 
 	// Remove "http://" or "https://" from the endpoint if present cause Endpoint cannot have fully qualified paths in minioClient.
@@ -335,12 +332,7 @@ func GetConfig(configPath string) (NodeImages, error) {
 	// Ensure all fields in OpenStackNodeImages are defined
 	for _, image := range nd.OpenStackNodeImages {
 		switch {
-		case image.CreateOpts == (struct {
-			Name            string `yaml:"name"`
-			DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-			ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-			Visibility      string `yaml:"visibility"`
-		}{}):
+		case image.CreateOpts == nil:
 			return NodeImages{}, fmt.Errorf("field CreateOpts must not be empty")
 		case image.CreateOpts.Name == "":
 			return NodeImages{}, fmt.Errorf("field 'name' in CreateOpts must be defined")
@@ -348,8 +340,6 @@ func GetConfig(configPath string) (NodeImages, error) {
 			return NodeImages{}, fmt.Errorf("field 'disk_format' in CreateOpts must be defined")
 		case image.CreateOpts.ContainerFormat == "":
 			return NodeImages{}, fmt.Errorf("field 'container_format' in CreateOpts must be defined")
-		case image.CreateOpts.Visibility == "":
-			return NodeImages{}, fmt.Errorf("field 'visibility' in CreateOpts must be defined")
 		}
 	}
 
