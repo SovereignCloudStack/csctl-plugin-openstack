@@ -27,7 +27,6 @@ import (
 	csctlclusterstack "github.com/SovereignCloudStack/csctl/pkg/clusterstack"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	cspo "github.com/sovereignCloudStack/cluster-stack-provider-openstack/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 )
 
@@ -42,16 +41,22 @@ type RegistryConfig struct {
 	} `yaml:"config"`
 }
 
-// OpenStackNodeImages represents the structure of the OpenStackNodeImages.
-type OpenStackNodeImages struct {
-	cspo.OpenStackNodeImage
-	ImageDir string `yaml:"imageDir,omitempty"`
+// OpenStackNodeImage represents the structure of the OpenStackNodeImage.
+type OpenStackNodeImage struct {
+	URL        string `yaml:"url"`
+	ImageDir   string `yaml:"imageDir,omitempty"`
+	CreateOpts struct {
+		Name            string `yaml:"name"`
+		DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
+		ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
+		Visibility      string `yaml:"visibility"`
+	} `yaml:"createOpts"`
 }
 
 // NodeImages represents the structure of the config.yaml file.
 type NodeImages struct {
-	APIVersion          string                `yaml:"apiVersion"`
-	OpenStackNodeImages []OpenStackNodeImages `yaml:"openStackNodeImages"`
+	APIVersion          string               `yaml:"apiVersion"`
+	OpenStackNodeImages []OpenStackNodeImage `yaml:"openStackNodeImages"`
 }
 
 const (
@@ -113,7 +118,7 @@ func main() {
 		}
 		fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
 	case "build":
-		for _, image := range config.OpenStackNodeImages {
+		for imageOrder, image := range config.OpenStackNodeImages {
 			if image.ImageDir == "" {
 				fmt.Printf("No images to build, image directory is not defined in config.yaml file")
 				os.Exit(1)
@@ -161,7 +166,7 @@ func main() {
 			}
 
 			// Update URL in config.yaml if it is necessary
-			if err := updateURLNodeImages(configFilePath, registryConfigPath, image.ImageDir); err != nil {
+			if err := updateURLNodeImages(configFilePath, registryConfigPath, image.ImageDir, imageOrder); err != nil {
 				fmt.Printf("Error updating URL in config.yaml: %v\n", err)
 				os.Exit(1)
 			}
@@ -233,7 +238,7 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 	return nil
 }
 
-func updateURLNodeImages(configFilePath, registryConfigPath, imageName string) error {
+func updateURLNodeImages(configFilePath, registryConfigPath, imageName string, imageOrder int) error {
 	// Read the config.yaml file
 	// #nosec G304
 	nodeImageData, err := os.ReadFile(configFilePath)
@@ -248,13 +253,8 @@ func updateURLNodeImages(configFilePath, registryConfigPath, imageName string) e
 	}
 
 	// Check if the URL already exists for the given image
-	var imageURLExists bool
-	for _, image := range nodeImages.OpenStackNodeImages {
-		if image.URL != "" {
-			imageURLExists = true
-			break
-		}
-	}
+	imageURLExists := nodeImages.OpenStackNodeImages[imageOrder].URL != ""
+
 	// If the URL doesn't exist, update it for the image
 	if !imageURLExists {
 		// Load registry configuration from YAML file
@@ -272,10 +272,9 @@ func updateURLNodeImages(configFilePath, registryConfigPath, imageName string) e
 		}
 		// Generate URL
 		newURL := fmt.Sprintf("%s%s/%s/%s", "https://", registryConfig.Config.Endpoint, registryConfig.Config.Bucket, imageName)
-		for i := range nodeImages.OpenStackNodeImages {
-			nodeImages.OpenStackNodeImages[i].URL = newURL
-			break
-		}
+
+		// Assign the generated URL to the correct node-image
+		nodeImages.OpenStackNodeImages[imageOrder].URL = newURL
 
 		// Marshal the updated struct back to YAML
 		updatedNodeImageData, err := yaml.Marshal(&nodeImages)
@@ -332,7 +331,12 @@ func GetConfig(configPath string) (NodeImages, error) {
 	// Ensure all fields in OpenStackNodeImages are defined
 	for _, image := range nd.OpenStackNodeImages {
 		switch {
-		case image.CreateOpts == nil:
+		case image.CreateOpts == (struct {
+			Name            string `yaml:"name"`
+			DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
+			ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
+			Visibility      string `yaml:"visibility"`
+		}{}):
 			return NodeImages{}, fmt.Errorf("field CreateOpts must not be empty")
 		case image.CreateOpts.Name == "":
 			return NodeImages{}, fmt.Errorf("field 'name' in CreateOpts must be defined")
