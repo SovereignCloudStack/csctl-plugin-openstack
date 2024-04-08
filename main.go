@@ -25,9 +25,10 @@ import (
 	"strings"
 
 	csctlclusterstack "github.com/SovereignCloudStack/csctl/pkg/clusterstack"
+	yaml "github.com/goccy/go-yaml"
+	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/images"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"gopkg.in/yaml.v2"
 )
 
 // RegistryConfig represents the structure of the registry.yaml file.
@@ -43,20 +44,18 @@ type RegistryConfig struct {
 
 // OpenStackNodeImage represents the structure of the OpenStackNodeImage.
 type OpenStackNodeImage struct {
-	URL        string `yaml:"url"`
-	ImageDir   string `yaml:"imageDir,omitempty"`
-	CreateOpts struct {
-		Name            string `yaml:"name"`
-		DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-		ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-		Visibility      string `yaml:"visibility"`
-	} `yaml:"createOpts"`
+	URL        string      `json:"url" yaml:"url"`
+	ImageDir   string      `json:"imageDir,omitempty" yaml:"imageDir,omitempty"`
+	CreateOpts *CreateOpts `json:"createOpts" yaml:"createOpts"`
 }
+
+// CreateOpts represents options used to create an image.
+type CreateOpts images.CreateOpts
 
 // NodeImages represents the structure of the config.yaml file.
 type NodeImages struct {
-	APIVersion          string               `yaml:"apiVersion"`
-	OpenStackNodeImages []OpenStackNodeImage `yaml:"openStackNodeImages"`
+	APIVersion          string                `yaml:"apiVersion"`
+	OpenStackNodeImages []*OpenStackNodeImage `yaml:"openStackNodeImages"`
 }
 
 const (
@@ -309,43 +308,38 @@ func copyFile(src, dest string) error {
 }
 
 // GetConfig returns Config.
-func GetConfig(configPath string) (NodeImages, error) {
+func GetConfig(configPath string) (*NodeImages, error) {
 	configFileData, err := os.ReadFile(filepath.Clean(configPath))
 	if err != nil {
-		return NodeImages{}, fmt.Errorf("failed to read config file: %w", err)
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	nd := NodeImages{}
 	if err := yaml.Unmarshal(configFileData, &nd); err != nil {
-		return NodeImages{}, fmt.Errorf("failed to unmarshal config yaml: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal config yaml: %w", err)
 	}
 
 	if nd.APIVersion == "" {
-		return NodeImages{}, fmt.Errorf("api version must not be empty")
+		return nil, fmt.Errorf("api version must not be empty")
 	}
 
 	if len(nd.OpenStackNodeImages) == 0 {
-		return NodeImages{}, fmt.Errorf("at least one node image needs to exist in OpenStackNodeImages list")
+		return nil, fmt.Errorf("at least one node image needs to exist in OpenStackNodeImages list")
 	}
 
 	// Ensure all fields in OpenStackNodeImages are defined
 	for _, image := range nd.OpenStackNodeImages {
 		switch {
-		case image.CreateOpts == (struct {
-			Name            string `yaml:"name"`
-			DiskFormat      string `yaml:"disk_format"`      //nolint:tagliatelle // The `DiskFormat` field in this struct corresponds to the `disk_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-			ContainerFormat string `yaml:"container_format"` //nolint:tagliatelle // The `ContainerFormat` field in this struct corresponds to the `container_format` in https://pkg.go.dev/github.com/gophercloud/gophercloud/openstack/imageservice/v2/images#CreateOpts
-			Visibility      string `yaml:"visibility"`
-		}{}):
-			return NodeImages{}, fmt.Errorf("field CreateOpts must not be empty")
+		case image.CreateOpts == nil:
+			return nil, fmt.Errorf("field CreateOpts must not be empty")
 		case image.CreateOpts.Name == "":
-			return NodeImages{}, fmt.Errorf("field 'name' in CreateOpts must be defined")
+			return nil, fmt.Errorf("field 'name' in CreateOpts must be defined")
 		case image.CreateOpts.DiskFormat == "":
-			return NodeImages{}, fmt.Errorf("field 'disk_format' in CreateOpts must be defined")
+			return nil, fmt.Errorf("field 'disk_format' in CreateOpts must be defined")
 		case image.CreateOpts.ContainerFormat == "":
-			return NodeImages{}, fmt.Errorf("field 'container_format' in CreateOpts must be defined")
+			return nil, fmt.Errorf("field 'container_format' in CreateOpts must be defined")
 		}
 	}
 
-	return nd, nil
+	return &nd, nil
 }
