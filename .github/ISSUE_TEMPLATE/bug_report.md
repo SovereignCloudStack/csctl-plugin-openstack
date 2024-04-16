@@ -19,5 +19,5 @@ about: Tell us about a problem you are experiencing.
 
 **Environment:**
 
-- csctl-plugin-openstack version: (use `csctl-plugin-openstack version`)
-- OS (e.g. from `/etc/os-release`): 
+- csctl-plugin-openstack version:
+- OS (e.g. from `/etc/os-release`):

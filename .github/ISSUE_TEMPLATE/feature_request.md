@@ -16,4 +16,4 @@ about: Suggest an idea for this project.
 
 **Environment:**
 
-- csctl-plugin-openstack version: (use `csctl-plugin-openstack version`)
+- csctl-plugin-openstack version:

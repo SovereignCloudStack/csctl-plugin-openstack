@@ -1,4 +1,4 @@
-name: Build csctl-plugin-openstack binary
+name: Build csctl-openstack binary
 # yamllint disable rule:line-length
 on: # yamllint disable-line rule:truthy
   push:
@@ -19,4 +19,4 @@ jobs:
       # Load Golang cache build from GitHub
       - name: build go binary
         run: |
-          go build -o csctl-plugin-openstack main.go
+          go build -o csctl-openstack main.go

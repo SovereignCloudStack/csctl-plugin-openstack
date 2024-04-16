@@ -48,8 +48,8 @@ export GOBIN := $(abspath $(TOOLS_BIN_DIR))
 #########
 
 .PHONY: clean
-clean: ## cleans the csctl-plugin-openstack binary
-	@if [ -f csctl-plugin-openstack ]; then rm csctl-plugin-openstack; fi
+clean: ## cleans the csctl-openstack binary
+	@if [ -f csctl-openstack ]; then rm csctl-openstack; fi
 
 
 ##@ Common
@@ -57,8 +57,8 @@ clean: ## cleans the csctl-plugin-openstack binary
 # Common #
 ##########
 .PHONY: build
-build: # build the csctl-plugin-openstack binary
-	go build -ldflags "$(LDFLAGS)" -o csctl-plugin-openstack main.go
+build: # build the csctl-openstack binary
+	go build -ldflags "$(LDFLAGS)" -o csctl-openstack main.go
 
 .PHONY: lint-golang
 lint-golang: ## Lint Golang codebase
