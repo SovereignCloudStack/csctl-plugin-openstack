@@ -16,6 +16,6 @@ temp
 .reports
 # build and release
 dist
-csctl-plugin-openstack
+csctl-openstack
 tmp/
 releases/

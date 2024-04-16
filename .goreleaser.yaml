@@ -1,7 +1,7 @@
 project_name: csctl-plugin-openstack
 
 builds:
-  - binary: csctl-plugin-openstack
+  - binary: csctl-openstack
     goos:
       - linux
       - darwin
