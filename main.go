@@ -39,6 +39,7 @@ type RegistryConfig struct {
 		Bucket    string `yaml:"bucket"`
 		AccessKey string `yaml:"accessKey"`
 		SecretKey string `yaml:"secretKey"`
+		Vefiry    *bool  `yaml:"verify,omitempty"`
 	} `yaml:"config"`
 }
 
@@ -214,10 +215,17 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 	registryConfig.Config.Endpoint = strings.TrimPrefix(registryConfig.Config.Endpoint, "http://")
 	registryConfig.Config.Endpoint = strings.TrimPrefix(registryConfig.Config.Endpoint, "https://")
 
+	// Requests are always secure (HTTPS) by default unless `verify: false` is defined in registry.yaml to enable insecure (HTTP) access.
+	useSSL := true
+
+	if registryConfig.Config.Vefiry != nil {
+		useSSL = *registryConfig.Config.Vefiry
+	}
+
 	// Initialize Minio client
 	minioClient, err := minio.New(registryConfig.Config.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(registryConfig.Config.AccessKey, registryConfig.Config.SecretKey, ""),
-		Secure: true,
+		Secure: useSSL,
 	})
 	if err != nil {
 		return fmt.Errorf("error initializing Minio client: %w", err)
