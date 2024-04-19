@@ -104,7 +104,10 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	registryConfigPath := os.Args[4]
+	registryConfigPath := ""
+	if len(os.Args) == 5 {
+		registryConfigPath = os.Args[4]
+	}
 
 	method := csctlConfig.Config.Provider.Config["method"]
 	switch method {
@@ -117,6 +120,11 @@ func main() {
 		}
 		fmt.Println("config.yaml copied to releaseDir as node-images.yaml successfully!")
 	case "build":
+		if registryConfigPath == "" {
+			fmt.Printf("Error: Please specify <node-image-registry-path> when using `build` method in csctl.yaml\n")
+			os.Exit(1)
+		}
+
 		for imageOrder, image := range config.OpenStackNodeImages {
 			if image.ImageDir == "" {
 				fmt.Printf("No images to build, image directory is not defined in config.yaml file")
