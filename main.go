@@ -18,7 +18,10 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,6 +43,7 @@ type RegistryConfig struct {
 		AccessKey string `yaml:"accessKey"`
 		SecretKey string `yaml:"secretKey"`
 		Vefiry    *bool  `yaml:"verify,omitempty"`
+		Cacert    string `yaml:"cacert,omitempty"`
 	} `yaml:"config"`
 }
 
@@ -222,10 +226,34 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 		useSSL = *registryConfig.Config.Vefiry
 	}
 
+	// TLS configuration
+	config := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
+
+	if registryConfig.Config.Cacert != "" {
+		config.RootCAs = x509.NewCertPool()
+		data, err := os.ReadFile(registryConfig.Config.Cacert)
+		if err != nil {
+			return fmt.Errorf("failed to read the CA certificate: %w", err)
+		}
+		ok := config.RootCAs.AppendCertsFromPEM(data)
+		if !ok {
+			// If no certificates were successfully parsed, set RootCAs to nil
+			config.RootCAs = nil
+		}
+	}
+
+	// Create custom HTTP transport using the TLS configuration
+	customTransport := &http.Transport{
+		TLSClientConfig: config,
+	}
+
 	// Initialize Minio client
 	minioClient, err := minio.New(registryConfig.Config.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(registryConfig.Config.AccessKey, registryConfig.Config.SecretKey, ""),
-		Secure: useSSL,
+		Creds:     credentials.NewStaticV4(registryConfig.Config.AccessKey, registryConfig.Config.SecretKey, ""),
+		Secure:    useSSL,
+		Transport: customTransport,
 	})
 	if err != nil {
 		return fmt.Errorf("error initializing Minio client: %w", err)
