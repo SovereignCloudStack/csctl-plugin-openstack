@@ -42,7 +42,7 @@ type RegistryConfig struct {
 		Bucket    string `yaml:"bucket"`
 		AccessKey string `yaml:"accessKey"`
 		SecretKey string `yaml:"secretKey"`
-		Vefiry    *bool  `yaml:"verify,omitempty"`
+		Verify    *bool  `yaml:"verify,omitempty"`
 		Cacert    string `yaml:"cacert,omitempty"`
 	} `yaml:"config"`
 }
