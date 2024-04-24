@@ -222,8 +222,8 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 	// Requests are always secure (HTTPS) by default unless `verify: false` is defined in registry.yaml to enable insecure (HTTP) access.
 	useSSL := true
 
-	if registryConfig.Config.Vefiry != nil {
-		useSSL = *registryConfig.Config.Vefiry
+	if registryConfig.Config.Verify != nil {
+		useSSL = *registryConfig.Config.Verify
 	}
 
 	// TLS configuration
