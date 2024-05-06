@@ -3,15 +3,14 @@ module github.com/SovereignCloudStack/csctl-plugin-openstack
 go 1.21
 
 require (
-	github.com/SovereignCloudStack/csctl v0.0.2
+	github.com/SovereignCloudStack/csctl v0.0.3-0.20240411140743-ff295ba9da22
 	github.com/goccy/go-yaml v1.11.3
 	github.com/gophercloud/gophercloud v1.11.0
 	github.com/minio/minio-go/v7 v7.0.69
 )
 
 require (
-	github.com/SovereignCloudStack/cluster-stack-operator v0.1.0-alpha.3 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/SovereignCloudStack/cluster-stack-operator v0.1.0-alpha.5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -23,7 +22,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -33,10 +32,10 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.1 // indirect
-	golang.org/x/crypto v0.19.0 // indirect
-	golang.org/x/mod v0.15.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/mod v0.16.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
