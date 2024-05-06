@@ -26,3 +26,4 @@ ignore:
   - '.cache'
   - _artifacts
   - dist
+  - example
