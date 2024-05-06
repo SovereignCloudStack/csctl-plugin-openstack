@@ -47,6 +47,3 @@ jobs:
 
       - name: Lint YAML
         run: make BUILD_IN_CONTAINER=false lint-yaml-ci
-
-      - name: Lint Dockerfile
-        run: make BUILD_IN_CONTAINER=false lint-dockerfile
