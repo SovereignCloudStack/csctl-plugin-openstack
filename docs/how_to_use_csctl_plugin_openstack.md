@@ -8,7 +8,7 @@ To avoid generating these files manually, you can use [CSCTL](https://github.com
 
 ## Different methods of csctl plugin for OpenStack
 
-The csctl plugin for OpenStack offers two methods that can be used for different use cases.
+The csctl plugin for OpenStack offers two methods that can be used for different use cases. You can configure them in `csctl.yaml` at `config.provider.config.method`, see [example of the csctl.yaml](../example/cluster-stacks/openstack/ferrol/csctl.yaml) file.
 
 ### Get method
 
