@@ -10,6 +10,9 @@ To avoid generating these files manually, you can use [CSCTL](https://github.com
 
 The csctl plugin for OpenStack offers two methods that can be used for different use cases. You can configure them in `csctl.yaml` at `config.provider.config.method`, see [example of the csctl.yaml](../example/cluster-stacks/openstack/ferrol/csctl.yaml) file.
 
+> [!NOTE]
+> Please note that in both methods you need to specify the `config.yaml` file in the `node-images` folder similar to a provided [example](../example/cluster-stacks/openstack/ferrol/node-images/config.yaml).
+
 ### Get method
 
 This method can be used when the creator of the cluster-stacks has already built and stored image(s) in some S3 storage. Then, they need to insert the URL to those image(s) in the `config.yaml`. The plugin, based on the configuration file, then generates `node-images.yaml` file in the release directory.
