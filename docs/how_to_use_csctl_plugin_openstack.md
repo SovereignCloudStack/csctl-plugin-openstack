@@ -62,3 +62,7 @@ csctl-openstack create-node-images cluster-stack-directory cluster-stack-release
 ```
 
 Then the plugin build and push created node image(s) to the appropriate S3 bucket.
+
+## Use csctl plugin for OpenStack with csctl
+
+[CSCTL](https://github.com/SovereignCloudStack/csctl) contains a plugin mechanism for providers. This means csctl automatically invokes the plugin for OpenStack if the `csctl.yaml` file contains a configuration for the OpenStack, i.e., `config.provider.config`. In this case, csctl looks for an executable (binary) with a certain name: `csctl- + config.provider.type`. Please take a look at the example of a [csctl.yaml](../example/cluster-stacks/openstack/ferrol/csctl.yaml) file to understand how the configuration for the OpenStack plugin should be set up for csctl to be able to invoke the plugin. Then, you can use basic csctl commands to create cluster stacks. See [csctl documentation](https://github.com/SovereignCloudStack/csctl/blob/main/docs/how_to_use_csctl.md#creating-cluster-stacks) for more details.
