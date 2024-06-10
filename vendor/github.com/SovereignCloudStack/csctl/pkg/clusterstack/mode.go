@@ -19,27 +19,26 @@ package clusterstack
 import (
 	"fmt"
 
-	"github.com/SovereignCloudStack/csctl/pkg/git"
+	"github.com/SovereignCloudStack/cluster-stack-operator/pkg/version"
 	"github.com/SovereignCloudStack/csctl/pkg/hash"
 )
 
 // HandleStableMode returns metadata for the stable mode.
-func HandleStableMode(gitHubReleasePath string, currentReleaseHash, latestReleaseHash hash.ReleaseHash) (MetaData, error) {
+func HandleStableMode(gitHubReleasePath string, currentReleaseHash, latestReleaseHash hash.ReleaseHash) (*MetaData, error) {
 	metadata, err := ParseMetaData(gitHubReleasePath)
 	if err != nil {
-		return MetaData{}, fmt.Errorf("failed to parse metadata: %w", err)
+		return nil, fmt.Errorf("failed to parse metadata: %w", err)
 	}
 
 	metadata.Versions.ClusterStack, err = BumpVersion(metadata.Versions.ClusterStack)
 	if err != nil {
-		return MetaData{}, fmt.Errorf("failed to bump cluster stack: %w", err)
+		return nil, fmt.Errorf("failed to bump cluster stack: %w", err)
 	}
-	fmt.Printf("Bumped ClusterStack Version: %s\n", metadata.Versions.ClusterStack)
 
 	if currentReleaseHash.ClusterAddonDir != latestReleaseHash.ClusterAddonDir || currentReleaseHash.ClusterAddonValues != latestReleaseHash.ClusterAddonValues {
 		metadata.Versions.Components.ClusterAddon, err = BumpVersion(metadata.Versions.Components.ClusterAddon)
 		if err != nil {
-			return MetaData{}, fmt.Errorf("failed to bump cluster addon: %w", err)
+			return nil, fmt.Errorf("failed to bump cluster addon: %w", err)
 		}
 		fmt.Printf("Bumped ClusterAddon Version: %s\n", metadata.Versions.Components.ClusterAddon)
 	} else {
@@ -49,7 +48,7 @@ func HandleStableMode(gitHubReleasePath string, currentReleaseHash, latestReleas
 	if currentReleaseHash.NodeImageDir != latestReleaseHash.NodeImageDir {
 		metadata.Versions.Components.NodeImage, err = BumpVersion(metadata.Versions.Components.NodeImage)
 		if err != nil {
-			return MetaData{}, fmt.Errorf("failed to bump node image: %w", err)
+			return nil, fmt.Errorf("failed to bump node image: %w", err)
 		}
 		fmt.Printf("Bumped NodeImage Version: %s\n", metadata.Versions.Components.NodeImage)
 	} else {
@@ -63,23 +62,44 @@ func HandleStableMode(gitHubReleasePath string, currentReleaseHash, latestReleas
 	return metadata, nil
 }
 
-// HandleHashMode returns metadata of Hash mode.
-func HandleHashMode(kubernetesVersion string) (MetaData, error) {
-	commitHash, err := git.GetLatestGitCommit("./")
-	if err != nil {
-		return MetaData{}, fmt.Errorf("failed to get latest commit hash: %w", err)
-	}
+// HandleHashMode handles the hash mode with the cluster stack hash.
+func HandleHashMode(currentRelease hash.ReleaseHash, kubernetesVersion string) *MetaData {
+	clusterStackHash := currentRelease.GetClusterStackHash()
+	clusterStackHash = fmt.Sprintf("v0-sha.%s", clusterStackHash)
 
-	commitHash = fmt.Sprintf("v0-sha.%s", commitHash)
-
-	return MetaData{
+	return &MetaData{
 		APIVersion: "metadata.clusterstack.x-k8s.io/v1alpha1",
 		Versions: Versions{
 			Kubernetes:   kubernetesVersion,
-			ClusterStack: commitHash,
+			ClusterStack: clusterStackHash,
 			Components: Component{
-				ClusterAddon: commitHash,
-				NodeImage:    commitHash,
+				ClusterAddon: clusterStackHash,
+				NodeImage:    clusterStackHash,
+			},
+		},
+	}
+}
+
+// HandleCustomMode handles custom mode with version for all components.
+func HandleCustomMode(kubernetesVersion, clusterStackVersion, clusterAddonVersion, nodeImageVersion string) (*MetaData, error) {
+	if _, err := version.New(clusterStackVersion); err != nil {
+		return nil, fmt.Errorf("failed to verify custom version for cluster stack: %q: %w", clusterStackVersion, err)
+	}
+	if _, err := version.New(clusterAddonVersion); err != nil {
+		return nil, fmt.Errorf("failed to verify custom version for cluster addon: %q: %w", clusterAddonVersion, err)
+	}
+	if _, err := version.New(nodeImageVersion); err != nil {
+		return nil, fmt.Errorf("failed to verify custom version for node image: %q: %w", nodeImageVersion, err)
+	}
+
+	return &MetaData{
+		APIVersion: "metadata.clusterstack.x-k8s.io/v1alpha1",
+		Versions: Versions{
+			Kubernetes:   kubernetesVersion,
+			ClusterStack: clusterStackVersion,
+			Components: Component{
+				ClusterAddon: clusterAddonVersion,
+				NodeImage:    nodeImageVersion,
 			},
 		},
 	}, nil
