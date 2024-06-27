@@ -6,7 +6,7 @@ require (
 	github.com/SovereignCloudStack/csctl v0.0.3
 	github.com/goccy/go-yaml v1.11.3
 	github.com/gophercloud/gophercloud v1.12.0
-	github.com/minio/minio-go/v7 v7.0.71
+	github.com/minio/minio-go/v7 v7.0.72
 )
 
 require (
