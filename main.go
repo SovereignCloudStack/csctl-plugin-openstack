@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -44,6 +43,7 @@ type RegistryConfig struct {
 		SecretKey string `yaml:"secretKey"`
 		Verify    *bool  `yaml:"verify,omitempty"`
 		Cacert    string `yaml:"cacert,omitempty"`
+		ProjectID string `yaml:"projectID,omitempty"`
 	} `yaml:"config"`
 }
 
@@ -143,17 +143,17 @@ func main() {
 				fmt.Printf("Image folder %s does not exist\n", packerImagePath)
 				os.Exit(1)
 			}
-			fmt.Println("Running packer build...")
-			// Warning: variables like build_name and output_directory must exist in packer variables file like in example
-			// #nosec G204
-			cmd := exec.Command("packer", "build", "-var", "build_name="+image.ImageDir, "-var", "output_directory="+outputDirectory, packerImagePath)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				fmt.Printf("Error running packer build: %v\n", err)
-				os.Exit(1)
-			}
-			fmt.Println("Packer build completed successfully.")
+			// fmt.Println("Running packer build...")
+			// // Warning: variables like build_name and output_directory must exist in packer variables file like in example
+			// // #nosec G204
+			// cmd := exec.Command("packer", "build", "-var", "build_name="+image.ImageDir, "-var", "output_directory="+outputDirectory, packerImagePath)
+			// cmd.Stdout = os.Stdout
+			// cmd.Stderr = os.Stderr
+			// if err := cmd.Run(); err != nil {
+			// 	fmt.Printf("Error running packer build: %v\n", err)
+			// 	os.Exit(1)
+			// }
+			// fmt.Println("Packer build completed successfully.")
 
 			_, err = os.Stat(registryConfigPath)
 			if err != nil {
@@ -161,18 +161,18 @@ func main() {
 				os.Exit(1)
 			}
 			// Get the current working directory
-			currentDir, err := os.Getwd()
-			if err != nil {
-				fmt.Printf("Error getting current working directory: %v\n", err)
-				os.Exit(1)
-			}
+			// currentDir, err := os.Getwd()
+			// if err != nil {
+			// 	fmt.Printf("Error getting current working directory: %v\n", err)
+			// 	os.Exit(1)
+			// }
 
 			// Path to the image created by the packer
 			// Warning: name of the image created by packer should have same name as the name of the image folder in node-images
-			ouputImagePath := filepath.Join(currentDir, outputDirectory, image.ImageDir)
+			ouputImagePath := "/home/miso/Downloads/starwars.png" //filepath.Join(currentDir, outputDirectory, image.ImageDir)
 
 			// Push the built image to S3
-			if err := pushToS3(ouputImagePath, image.ImageDir, registryConfigPath); err != nil {
+			if err := pushToS3(ouputImagePath, "star-wars", registryConfigPath); err != nil {
 				fmt.Printf("Error pushing image to S3: %v\n", err)
 				os.Exit(1)
 			}
@@ -211,8 +211,8 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 		return fmt.Errorf("error decoding registry config file: %w", err)
 	}
 
-	if registryConfig.Type != "S3" {
-		return fmt.Errorf("error, only S3 compatible registry is supported")
+	if registryConfig.Type != "S3" && registryConfig.Type != "Swift" {
+		return fmt.Errorf("error, only S3 or Swift compatible registry is supported")
 	}
 
 	// Remove "http://" or "https://" from the endpoint if present cause Endpoint cannot have fully qualified paths in minioClient.
@@ -313,8 +313,19 @@ func updateURLNodeImages(configFilePath, registryConfigPath, imageName string, i
 		if err := decoder.Decode(&registryConfig); err != nil {
 			return fmt.Errorf("error decoding registry config file: %w", err)
 		}
-		// Generate URL
-		newURL := fmt.Sprintf("%s%s/%s/%s", "https://", registryConfig.Config.Endpoint, registryConfig.Config.Bucket, imageName)
+
+		// Check registry type and projectID for Swift
+		if registryConfig.Type == "Swift" && registryConfig.Config.ProjectID == "" {
+			return fmt.Errorf("error, projectID must be specified for Swift registry")
+		}
+
+		// Generate URL based on registry type
+		var newURL string
+		if registryConfig.Type == "S3" {
+			newURL = fmt.Sprintf("%s/%s/%s", registryConfig.Config.Endpoint, registryConfig.Config.Bucket, imageName)
+		} else if registryConfig.Type == "Swift" {
+			newURL = fmt.Sprintf("%s/swift/v1/AUTH_%s/%s/%s", registryConfig.Config.Endpoint, registryConfig.Config.ProjectID, registryConfig.Config.Bucket, imageName)
+		}
 
 		// Assign the generated URL to the correct node-image
 		nodeImages.OpenStackNodeImages[imageOrder].URL = newURL
