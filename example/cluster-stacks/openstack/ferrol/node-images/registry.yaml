@@ -4,5 +4,6 @@ config:
   bucket: <bucket_name>
   accessKey: <access_key>
   secretKey: <secret_key>
+  # projectID: <openstack_project_id> # Needs to be specified when type is equal to Swift
   # verify: false  # Only if you want to disable SSL certificate verification and use `http` url in endpoint
   # cacert: <path/to/cacert> # Use this field only if the S3 storage endpoint certificate is signed by a custom(non-public) authority

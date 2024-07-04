@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -43,7 +44,7 @@ type RegistryConfig struct {
 		SecretKey string `yaml:"secretKey"`
 		Verify    *bool  `yaml:"verify,omitempty"`
 		Cacert    string `yaml:"cacert,omitempty"`
-		ProjectID string `yaml:"projectID,omitempty"`
+		ProjectID string `yaml:"projectID,omitempty"` //nolint:tagliatelle // using 'projectID' instead of 'projectId'
 	} `yaml:"config"`
 }
 
@@ -143,17 +144,17 @@ func main() {
 				fmt.Printf("Image folder %s does not exist\n", packerImagePath)
 				os.Exit(1)
 			}
-			// fmt.Println("Running packer build...")
-			// // Warning: variables like build_name and output_directory must exist in packer variables file like in example
-			// // #nosec G204
-			// cmd := exec.Command("packer", "build", "-var", "build_name="+image.ImageDir, "-var", "output_directory="+outputDirectory, packerImagePath)
-			// cmd.Stdout = os.Stdout
-			// cmd.Stderr = os.Stderr
-			// if err := cmd.Run(); err != nil {
-			// 	fmt.Printf("Error running packer build: %v\n", err)
-			// 	os.Exit(1)
-			// }
-			// fmt.Println("Packer build completed successfully.")
+			fmt.Println("Running packer build...")
+			// Warning: variables like build_name and output_directory must exist in packer variables file like in example
+			// #nosec G204
+			cmd := exec.Command("packer", "build", "-var", "build_name="+image.ImageDir, "-var", "output_directory="+outputDirectory, packerImagePath)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Printf("Error running packer build: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Packer build completed successfully.")
 
 			_, err = os.Stat(registryConfigPath)
 			if err != nil {
@@ -161,18 +162,18 @@ func main() {
 				os.Exit(1)
 			}
 			// Get the current working directory
-			// currentDir, err := os.Getwd()
-			// if err != nil {
-			// 	fmt.Printf("Error getting current working directory: %v\n", err)
-			// 	os.Exit(1)
-			// }
+			currentDir, err := os.Getwd()
+			if err != nil {
+				fmt.Printf("Error getting current working directory: %v\n", err)
+				os.Exit(1)
+			}
 
 			// Path to the image created by the packer
 			// Warning: name of the image created by packer should have same name as the name of the image folder in node-images
-			ouputImagePath := "/home/miso/Downloads/starwars.png" //filepath.Join(currentDir, outputDirectory, image.ImageDir)
+			ouputImagePath := filepath.Join(currentDir, outputDirectory, image.ImageDir)
 
 			// Push the built image to S3
-			if err := pushToS3(ouputImagePath, "star-wars", registryConfigPath); err != nil {
+			if err := pushToS3(ouputImagePath, image.ImageDir, registryConfigPath); err != nil {
 				fmt.Printf("Error pushing image to S3: %v\n", err)
 				os.Exit(1)
 			}
