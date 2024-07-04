@@ -28,7 +28,20 @@ https://<endpoint>/<bucket-name>/<image-dir-name>
 Be aware of that in this method you need to specify `imageDir` in `config.yaml` file.
 
 > [!NOTE]
-> URL creation does not work for OpenStack Swift.
+> If you want to use URL creation for OpenStack Swift, please change the `registry.yaml` file accordingally:
+
+```yaml
+type: Swift
+config:
+  endpoint: <endpoint>
+  bucket: <bucket_name>
+  accessKey: <access_key>
+  secretKey: <secret_key>
+  projectID: <openstack_project_id>
+  # verify: false  # Only if you want to disable SSL certificate verification and use `http` url in endpoint
+  # cacert: <path/to/cacert> # Use this field only if the S3 storage endpoint certificate is signed by a custom(non-public) authority
+
+```
 
 ## Installing csctl plugin for OpenStack
 
