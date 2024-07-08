@@ -19,11 +19,19 @@ This method can be used when the creator of the cluster-stacks has already built
 
 ### Build method
 
-The use case for this method is the opposite of the `Get` method. It means that the cluster-stack creator intends to use an image that has not yet been built. The plugin then builds image(s) based on Packer scripts in the `node-images` folder and pushes these image(s) to an S3 bucket. In this mode, you need to provide the path to your S3 storage credentials using the `--node-image-registry` flag, see [registry.yaml](../example/cluster-stacks/openstack/ferrol/node-images/registry.yaml). The URL does not need to be set in `config.yaml`, plugin can creates for you based on this pattern:
+The use case for this method is the opposite of the `Get` method. It means that the cluster-stack creator intends to use an image that has not yet been built. The plugin then builds image(s) based on Packer scripts in the `node-images` folder and pushes these image(s) to an S3 bucket. In this mode, you need to provide the path to your S3 storage credentials using the `--node-image-registry` flag, see [registry.yaml](../example/cluster-stacks/openstack/ferrol/node-images/registry.yaml). The URL does not need to be set in `config.yaml`. The plugin can create it for you based on the following patterns:
 
-```bash
-https://<endpoint>/<bucket-name>/<image-dir-name>
-```
+- for an `S3` type registry:
+
+  ```bash
+  <endpoint>/<bucket-name>/<image-dir-name>
+  ```
+
+- for a `Swift` type registry:
+
+  ```bash
+  <endpoint>/swift/v1/AUTH_/<project-ID>/<bucket-name>/<image-dir-name>
+  ```
 
 Be aware of that in this method you need to specify `imageDir` in `config.yaml` file.
 
