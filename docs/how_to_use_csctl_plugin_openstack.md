@@ -30,7 +30,7 @@ The use case for this method is the opposite of the `Get` method. It means that 
 - for a `Swift` type registry:
 
   ```bash
-  <endpoint>/swift/v1/AUTH_/<project-ID>/<bucket-name>/<image-dir-name>
+  <endpoint>/swift/v1/AUTH_<project-ID>/<bucket-name>/<image-dir-name>
   ```
 
 Be aware of that in this method you need to specify `imageDir` in `config.yaml` file.
