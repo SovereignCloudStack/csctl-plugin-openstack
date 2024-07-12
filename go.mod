@@ -7,6 +7,7 @@ require (
 	github.com/goccy/go-yaml v1.12.0
 	github.com/gophercloud/gophercloud v1.14.0
 	github.com/minio/minio-go/v7 v7.0.74
+	github.com/spf13/cobra v1.8.0
 )
 
 require (
@@ -16,6 +17,7 @@ require (
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -23,6 +25,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/rs/xid v1.5.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
