@@ -61,6 +61,16 @@ sudo chmod u+x ~/Downloads/<release-name>
 sudo mv ~/Downloads/<release-name> /usr/local/bin/csctl-openstack # or use any bin directory from your PATH
 ```
 
+Then you can check whether everything worked by printing the version of csctl-openstack.
+
+```bash
+$ csctl-openstack version
+csctl-openstack version: v0.0.1-10-gb6fd166
+commit: b6fd16665c5e28d122ce50063977a599d809f641
+```
+
+If you don't see a version there, then something has gone wrong. Re-check above steps and open an issue if it still does not work!
+
 If you're using `gh` CLI then you can also use the following to download it.
 
 ```bash
