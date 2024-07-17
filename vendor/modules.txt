@@ -26,7 +26,7 @@ github.com/goccy/go-json/internal/encoder/vm_color_indent
 github.com/goccy/go-json/internal/encoder/vm_indent
 github.com/goccy/go-json/internal/errors
 github.com/goccy/go-json/internal/runtime
-# github.com/goccy/go-yaml v1.11.3
+# github.com/goccy/go-yaml v1.12.0
 ## explicit; go 1.19
 github.com/goccy/go-yaml
 github.com/goccy/go-yaml/ast
