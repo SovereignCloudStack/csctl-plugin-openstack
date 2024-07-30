@@ -44,6 +44,7 @@ type RegistryConfig struct {
 		SecretKey string `yaml:"secretKey"`
 		Verify    *bool  `yaml:"verify,omitempty"`
 		Cacert    string `yaml:"cacert,omitempty"`
+		ProjectID string `yaml:"projectID,omitempty"` //nolint:tagliatelle // using 'projectID' instead of 'projectId'
 	} `yaml:"config"`
 }
 
@@ -211,8 +212,8 @@ func pushToS3(filePath, fileName, registryConfigPath string) error {
 		return fmt.Errorf("error decoding registry config file: %w", err)
 	}
 
-	if registryConfig.Type != "S3" {
-		return fmt.Errorf("error, only S3 compatible registry is supported")
+	if registryConfig.Type != "S3" && registryConfig.Type != "Swift" {
+		return fmt.Errorf("error, only S3 or Swift compatible registry is supported")
 	}
 
 	// Remove "http://" or "https://" from the endpoint if present cause Endpoint cannot have fully qualified paths in minioClient.
@@ -313,8 +314,19 @@ func updateURLNodeImages(configFilePath, registryConfigPath, imageName string, i
 		if err := decoder.Decode(&registryConfig); err != nil {
 			return fmt.Errorf("error decoding registry config file: %w", err)
 		}
-		// Generate URL
-		newURL := fmt.Sprintf("%s%s/%s/%s", "https://", registryConfig.Config.Endpoint, registryConfig.Config.Bucket, imageName)
+
+		// Check registry type and projectID for Swift
+		if registryConfig.Type == "Swift" && registryConfig.Config.ProjectID == "" {
+			return fmt.Errorf("error, projectID must be specified for Swift registry")
+		}
+
+		// Generate URL based on registry type
+		var newURL string
+		if registryConfig.Type == "S3" {
+			newURL = fmt.Sprintf("%s/%s/%s", registryConfig.Config.Endpoint, registryConfig.Config.Bucket, imageName)
+		} else if registryConfig.Type == "Swift" {
+			newURL = fmt.Sprintf("%s/swift/v1/AUTH_%s/%s/%s", registryConfig.Config.Endpoint, registryConfig.Config.ProjectID, registryConfig.Config.Bucket, imageName)
+		}
 
 		// Assign the generated URL to the correct node-image
 		nodeImages.OpenStackNodeImages[imageOrder].URL = newURL
