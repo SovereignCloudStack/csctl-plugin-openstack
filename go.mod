@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/SovereignCloudStack/csctl v0.0.3
 	github.com/goccy/go-yaml v1.12.0
-	github.com/gophercloud/gophercloud v1.14.0
+	github.com/gophercloud/gophercloud/v2 v2.1.0
 	github.com/minio/minio-go/v7 v7.0.74
 )
 
