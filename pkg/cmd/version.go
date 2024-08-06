@@ -11,11 +11,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package main is the entrypoint for csctl-openstack.
-package main
+package cmd
 
-import "github.com/SovereignCloudStack/csctl-plugin-openstack/pkg/cmd"
+import (
+	"fmt"
 
-func main() {
-	cmd.Execute()
+	"github.com/spf13/cobra"
+)
+
+var (
+	// Version of csctl-openstack.
+	Version = "dev"
+	// Commit against which csctl-openstack version is cut.
+	Commit = "unknown"
+)
+
+var versionCmd = &cobra.Command{
+	Use:          "version",
+	Short:        "prints the latest version of csctl-openstack",
+	Run:          printVersion,
+	SilenceUsage: true,
+}
+
+func printVersion(_ *cobra.Command, _ []string) {
+	fmt.Println("csctl-openstack version:", Version)
+	fmt.Println("commit:", Commit)
 }
