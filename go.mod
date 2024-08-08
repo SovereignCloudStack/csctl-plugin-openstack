@@ -7,7 +7,7 @@ require (
 	github.com/goccy/go-yaml v1.12.0
 	github.com/gophercloud/gophercloud v1.14.0
 	github.com/minio/minio-go/v7 v7.0.74
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
