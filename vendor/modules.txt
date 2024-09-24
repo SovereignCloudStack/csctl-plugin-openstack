@@ -2,7 +2,7 @@
 ## explicit; go 1.21
 github.com/SovereignCloudStack/cluster-stack-operator/pkg/kubernetesversion
 github.com/SovereignCloudStack/cluster-stack-operator/pkg/version
-# github.com/SovereignCloudStack/csctl v0.0.3
+# github.com/SovereignCloudStack/csctl v0.0.4
 ## explicit; go 1.21
 github.com/SovereignCloudStack/csctl/pkg/clusterstack
 github.com/SovereignCloudStack/csctl/pkg/hash
@@ -39,7 +39,7 @@ github.com/goccy/go-yaml/token
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/gophercloud/gophercloud v1.14.0
+# github.com/gophercloud/gophercloud v1.14.1
 ## explicit; go 1.14
 github.com/gophercloud/gophercloud
 github.com/gophercloud/gophercloud/openstack/imageservice/v2/images
@@ -66,7 +66,7 @@ github.com/mattn/go-isatty
 # github.com/minio/md5-simd v1.1.2
 ## explicit; go 1.14
 github.com/minio/md5-simd
-# github.com/minio/minio-go/v7 v7.0.76
+# github.com/minio/minio-go/v7 v7.0.77
 ## explicit; go 1.21
 github.com/minio/minio-go/v7
 github.com/minio/minio-go/v7/pkg/cors
